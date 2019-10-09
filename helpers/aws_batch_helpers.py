@@ -36,60 +36,59 @@ class Batch:
         return job_definition_list
 
 
-def set_up_job_definition(
-    batch,
-    profile_name="default",
-    docker_image=None,
-    region_name="us-west-2",
-    job_role_arn=None
-):
-    """Set up the job definition used for the Nextflow head node."""
+    def set_up_job_definition(
+        self,
+        profile_name="default",
+        docker_image=None,
+        job_role_arn=None
+    ):
+        """Set up the job definition used for the Nextflow head node."""
 
-    assert docker_image is not None, "Please specify Docker image for Nextflow head node"
-    assert job_role_arn is not None, "Please specify job role ARN"
+        assert docker_image is not None, "Please specify Docker image for Nextflow head node"
+        assert job_role_arn is not None, "Please specify job role ARN"
 
-    # Get the list of existing job definitions
-    logging.info("Checking for a suitable existing job definition")
-    job_definitions = batch.get_job_definitions()
+        # Get the list of existing job definitions
+        logging.info("Checking for a suitable existing job definition")
+        job_definitions = self.get_job_definitions()
 
-    # Check to see if there is a job definition that is suitable
-    for j in job_definitions:
+        # Check to see if there is a job definition that is suitable
+        for j in job_definitions:
 
-        # Keep this set to true if all elements match
-        keep_this_job_definition = True
+            # Keep this set to true if all elements match
+            keep_this_job_definition = True
 
-        # Iterate over each fixed element
-        for k, v in [
-            ("type", "container"),
-            ("status", "ACTIVE"),
-            ("jobRoleArn", job_role_arn),
-            ("image", docker_image)
-        ]:
-            # Check the base namespace, as well as the 'containerProperties'
-            # Both 'jobRoleArn' and 'image' are under 'containerProperties'
-            if j.get(k, j["containerProperties"].get(k)) != v:
-                # If it doesn't match, set the marker to False
-                keep_this_job_definition = False
+            # Iterate over each fixed element
+            for k, v in [
+                ("type", "container"),
+                ("status", "ACTIVE"),
+                ("jobRoleArn", job_role_arn),
+                ("image", docker_image)
+            ]:
+                # Check the base namespace, as well as the 'containerProperties'
+                # Both 'jobRoleArn' and 'image' are under 'containerProperties'
+                if j.get(k, j["containerProperties"].get(k)) != v:
+                    # If it doesn't match, set the marker to False
+                    keep_this_job_definition = False
 
-        # If everything matches, use this one
-        if keep_this_job_definition:
-            logging.info("Using existing job definition")
-            return "{}:{}".format(
-                j["jobDefinitionName"], j["revision"]
-            )
-    # Otherwise, make a new job definition
-    logging.info("Making new job definition")
-    response = batch.client.register_job_definition(
-        jobDefinitionName="nextflow_head_node",
-        type="container",
-        containerProperties={
-            "image": docker_image,
-            "jobRoleArn": job_role_arn,
-            "vcpus": 1,
-            "memory": 4000,
-        }
-    )
+            # If everything matches, use this one
+            if keep_this_job_definition:
+                logging.info("Using existing job definition")
+                return "{}:{}".format(
+                    j["jobDefinitionName"], j["revision"]
+                )
+        # Otherwise, make a new job definition
+        logging.info("Making new job definition")
+        response = self.client.register_job_definition(
+            jobDefinitionName="nextflow_head_node",
+            type="container",
+            containerProperties={
+                "image": docker_image,
+                "jobRoleArn": job_role_arn,
+                "vcpus": 1,
+                "memory": 4000,
+            }
+        )
 
-    return "{}:{}".format(
-        response["jobDefinitionName"], response["revision"]
-    )
+        return "{}:{}".format(
+            response["jobDefinitionName"], response["revision"]
+        )

@@ -60,11 +60,9 @@ if __name__ == "__main__":
     batch = aws_batch_helpers.Batch(args.profile_name, args.region_name)
 
     # Get the job definition to use for the Nextflow head node
-    job_definition_name = aws_batch_helpers.set_up_job_definition(
-        batch,
+    job_definition_name = batch.set_up_job_definition(
         profile_name=args.profile_name,
         docker_image=args.docker_image,
-        region_name=args.region_name,
         job_role_arn=args.job_role_arn,
     )
 
