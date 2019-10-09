@@ -92,3 +92,51 @@ class Batch:
         return "{}:{}".format(
             response["jobDefinitionName"], response["revision"]
         )
+
+    def start_job(
+        self,
+        job_definition=None,
+        workflow=None,
+        config_file=None,
+        name=None,
+        arguments=None,
+        queue=None,
+        head_node_cpus=1,
+        head_node_mem_mbs=4000
+    ):
+        """Start the job for the Nextflow head node."""
+
+        assert job_definition is not None, "Please specify the job definition"
+        assert workflow is not None, "Please specify the workflow"
+        assert config_file is not None, "Please specify the config_file"
+        assert name is not None, "Please specify the name"
+        assert queue is not None, "Please specify the queue"
+
+        # Format the command
+        command = [
+            workflow,
+            config_file
+        ]
+        if arguments is not None:
+            for field in arguments.split(","):
+                if "=" in field:
+                    assert len(field.split("=")) == 1, "Field must only have a single '=' ({})".format(field)
+                    arguments.append("--" + field.split("=")[0])
+                    arguments.append(field.split("=")[1])
+                else:
+                    arguments.append("--" + field)
+
+        response = self.client.submit_job(
+            jobName=name,
+            jobQueue=queue,
+            jobDefinition=job_definition,
+            containerOverrides={
+                "vcpus": head_node_cpus,
+                "memory": head_node_mem_mbs,
+                "command": command
+            }
+        )
+
+        logging.info("Started {} as {}".format(
+            response["jobName"], response["jobId"]
+        ))

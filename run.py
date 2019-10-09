@@ -23,7 +23,22 @@ if __name__ == "__main__":
     parser.add_argument(
         '--workflow',
         type=str,
+        default="hello",
         help='Location of the workflow to run'
+    )
+
+    parser.add_argument(
+        '--name',
+        type=str,
+        default="nextflow_workflow",
+        help='Name used for this run'
+    )
+
+    parser.add_argument(
+        '--config-file',
+        type=str,
+        default=None,
+        help='Optional Nextflow config file'
     )
 
     parser.add_argument(
@@ -54,6 +69,20 @@ if __name__ == "__main__":
         help='JobRoleARN used for AWS Batch'
     )
 
+    parser.add_argument(
+        '--job-queue',
+        type=str,
+        default=None,
+        help='Queue used on AWS Batch'
+    )
+
+    parser.add_argument(
+        '--arguments',
+        type=str,
+        default=None,
+        help='Comma-separated list of arguments in KEY=VALUE format (e.g. foo=bar,next=flow)'
+    )
+
     args = parser.parse_args()
 
     # Set up the connection to AWS Batch
@@ -67,3 +96,13 @@ if __name__ == "__main__":
     )
 
     logging.info("Using job definition: {}".format(job_definition_name))
+
+    # Start the job which will run the Nextflow head node
+    batch.start_job(
+        job_definition=job_definition_name,
+        workflow=args.workflow,
+        name=args.name,
+        arguments=args.arguments,
+        queue=args.job_queue,
+        config_file=args.config_file,
+    )
