@@ -102,7 +102,8 @@ class Batch:
         arguments=None,
         queue=None,
         head_node_cpus=1,
-        head_node_mem_mbs=4000
+        head_node_mem_mbs=4000,
+        resume=True
     ):
         """Start the job for the Nextflow head node."""
 
@@ -114,9 +115,17 @@ class Batch:
 
         # Format the command
         command = [
-            workflow,
-            config_file
+            workflow
         ]
+        if config_file is not None:
+            command.extend(["-c", config_file])
+
+        if resume:
+            command.append("-resume")
+
+        # Add the queue
+        command.extend(["-process.queue", queue])
+
         if arguments is not None:
             for field in arguments.split(","):
                 if "=" in field:
