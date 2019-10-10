@@ -41,7 +41,7 @@ process.executor = "awsbatch"
 process.queue = "$NF_JOB_QUEUE"
 aws.region = "$AWS_REGION"
 aws.batch.cliPath = "/home/ec2-user/miniconda/bin/aws"
-aws.batch.jobRole = $JOB_ROLE_ARN
+aws.batch.jobRole = "$JOB_ROLE_ARN"
 EOF
 
 if [ ! -z "$TEMP_VOL" ]; then
