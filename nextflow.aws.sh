@@ -35,7 +35,7 @@ remove_line $NF_CONFIG aws.region
 remove_line $NF_CONFIG aws.batch.cliPath
 remove_line $NF_CONFIG aws.batch.jobRole
 
-cat << EOF > $NF_CONFIG
+cat << EOF >> $NF_CONFIG
 workDir = "$NF_WORKDIR"
 process.executor = "awsbatch"
 process.queue = "$NF_JOB_QUEUE"
@@ -46,7 +46,7 @@ EOF
 
 if [ ! -z "$TEMP_VOL" ]; then
     remove_line $NF_CONFIG aws.batch.volumes
-    cat << EOF > $NF_CONFIG
+    cat << EOF >> $NF_CONFIG
 aws.batch.volumes = ['$TEMP_VOL:/tmp:rw']
 EOF
 fi
@@ -54,7 +54,7 @@ fi
 if [ ! -z "$TOWER_TOKEN" ]; then
     remove_line $NF_CONFIG tower.accessToken
     remove_line $NF_CONFIG tower.enabled
-    cat << EOF > $NF_CONFIG
+    cat << EOF >> $NF_CONFIG
 tower.accessToken = '$TOWER_TOKEN'
 tower.enabled = true
 EOF
