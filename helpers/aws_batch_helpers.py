@@ -222,7 +222,7 @@ class Batch:
             workflow_uuid
         ))
 
-        return response["jobId"]
+        return response["jobId"], workflow_uuid
 
     def watch(self, job_id, polling_frequency=1, printing_frequency=60):
         """Monitor the status and logs of a job on AWS Batch."""

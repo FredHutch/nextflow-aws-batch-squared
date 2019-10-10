@@ -139,7 +139,7 @@ if __name__ == "__main__":
     logging.info("Using job definition: {}".format(job_definition_name))
 
     # Start the job which will run the Nextflow head node
-    job_id = batch.start_job(
+    job_id, workflow_uuid = batch.start_job(
         restart_uuid=args.restart_uuid,
         working_directory=args.working_directory,
         job_definition=job_definition_name,
@@ -157,3 +157,6 @@ if __name__ == "__main__":
 
     if args.watch:
         batch.watch(job_id)
+
+    logging.info(
+        "The workflow is no longer running. To restart, use --restart-uuid {}".format(workflow_uuid))
