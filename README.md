@@ -14,6 +14,11 @@ additional jobs. Depending on your use case, it may also be useful
 to provide a configuration which includes some temporary scratch storage
 space.
 
+If you are having trouble, make sure that your configuration is specified
+by either the `AWS_PROFILE` and `AWS_DEFAULT_REGION` environment variables,
+or by running `aws configure`.
+
+
 ## Execution Syntax
 
 ```
