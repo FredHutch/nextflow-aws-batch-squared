@@ -142,6 +142,8 @@ class Batch:
         # Format the command
         command = [
             workflow,
+            "-work-dir",
+            working_directory,
             "-resume"
         ]
 
