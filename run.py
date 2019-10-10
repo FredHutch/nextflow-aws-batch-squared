@@ -28,6 +28,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        '--working-directory',
+        type=str,
+        default=None,
+        help='Location in S3 to use for temporary files'
+    )
+
+    parser.add_argument(
         '--name',
         type=str,
         default="nextflow_workflow",
@@ -70,6 +77,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        '--temporary-volume',
+        type=str,
+        default=None,
+        help='Volume available on the AMI for temporary scratch space'
+    )
+
+    parser.add_argument(
         '--job-queue',
         type=str,
         default=None,
@@ -81,6 +95,20 @@ if __name__ == "__main__":
         type=str,
         default=None,
         help='Comma-separated list of arguments in KEY=VALUE format (e.g. foo=bar,next=flow)'
+    )
+
+    parser.add_argument(
+        '--restart-uuid',
+        type=str,
+        default=None,
+        help='If specified, restart the previously run job with this UUID'
+    )
+
+    parser.add_argument(
+        '--tower-token',
+        type=str,
+        default=None,
+        help='If specified, use Tower (tower.nf) to monitor the workflow'
     )
 
     args = parser.parse_args()
@@ -99,10 +127,16 @@ if __name__ == "__main__":
 
     # Start the job which will run the Nextflow head node
     batch.start_job(
+        restart_uuid=args.restart_uuid,
+        working_directory=args.working_directory,
         job_definition=job_definition_name,
         workflow=args.workflow,
         name=args.name,
         arguments=args.arguments,
         queue=args.job_queue,
         config_file=args.config_file,
+        job_role_arn=args.job_role_arn,
+        temporary_volume=args.temporary_volume,
+        aws_region=args.region_name,
+        tower_token=args.tower_token,
     )

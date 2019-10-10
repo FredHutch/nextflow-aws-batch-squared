@@ -1,6 +1,7 @@
 import boto3
 import json
 import logging
+import uuid
 
 
 class Batch:
@@ -30,11 +31,11 @@ class Batch:
             )
 
             # Add the next page to the list
-            job_definition_list = job_definition_list + response["jobDefinitions"]
+            job_definition_list = job_definition_list + \
+                response["jobDefinitions"]
 
         # Return the entire list of job definitions
         return job_definition_list
-
 
     def set_up_job_definition(
         self,
@@ -95,6 +96,8 @@ class Batch:
 
     def start_job(
         self,
+        restart_uuid=None,
+        working_directory=None,
         job_definition=None,
         workflow=None,
         config_file=None,
@@ -103,37 +106,92 @@ class Batch:
         queue=None,
         head_node_cpus=1,
         head_node_mem_mbs=4000,
-        resume=True
+        job_role_arn=None,
+        temporary_volume=None,
+        aws_region=None,
+        tower_token=None
     ):
         """Start the job for the Nextflow head node."""
 
+        assert working_directory is not None, "Please specify the working directory"
         assert job_definition is not None, "Please specify the job definition"
         assert workflow is not None, "Please specify the workflow"
         assert config_file is not None, "Please specify the config_file"
         assert name is not None, "Please specify the name"
         assert queue is not None, "Please specify the queue"
+        assert job_role_arn is not None, "Please specify the job_role_arn"
+        assert aws_region is not None, "Please specify the aws_region"
+
+        assert working_directory.startswith(
+            "s3://"), "Working directory must be an S3 path"
+        if working_directory.endswith("/") is False:
+            working_directory += "/"
+
+        # Use a logs directory for this particular command
+        if restart_uuid is None:
+            workflow_uuid = str(uuid.uuid4())
+
+        else:
+            workflow_uuid = restart_uuid
+
+        logs_directory = "{}{}".format(
+            working_directory,
+            workflow_uuid
+        )
 
         # Format the command
         command = [
-            workflow
+            workflow,
+            "-resume"
         ]
-        if config_file is not None:
-            command.extend(["-c", config_file])
-
-        if resume:
-            command.append("-resume")
-
-        # Add the queue
-        command.extend(["-process.queue", queue])
 
         if arguments is not None:
             for field in arguments.split(","):
                 if "=" in field:
-                    assert len(field.split("=")) == 1, "Field must only have a single '=' ({})".format(field)
+                    assert len(field.split(
+                        "=")) == 1, "Field must only have a single '=' ({})".format(field)
                     arguments.append("--" + field.split("=")[0])
                     arguments.append(field.split("=")[1])
                 else:
                     arguments.append("--" + field)
+
+        # Set up the environment variables
+        environment = [
+            {
+                "name": "NF_JOB_QUEUE",
+                "value": queue
+            },
+            {
+                "name": "NF_LOGSDIR",
+                "value": logs_directory
+            },
+            {
+                "name": "JOB_ROLE_ARN",
+                "value": job_role_arn
+            },
+            {
+                "name": "AWS_REGION",
+                "value": aws_region
+            }
+        ]
+
+        if config_file is not None:
+            environment.append({
+                "name": "NF_CONFIG",
+                "value": config_file
+            })
+
+        if temporary_volume is not None:
+            environment.append({
+                "name": "TEMP_VOL",
+                "value": temporary_volume
+            })
+
+        if tower_token is not None:
+            environment.append({
+                "name": "TOWER_TOKEN",
+                "value": tower_token
+            })
 
         response = self.client.submit_job(
             jobName=name,
@@ -142,10 +200,13 @@ class Batch:
             containerOverrides={
                 "vcpus": head_node_cpus,
                 "memory": head_node_mem_mbs,
-                "command": command
+                "command": command,
+                "environment": environment
             }
         )
 
-        logging.info("Started {} as {}".format(
-            response["jobName"], response["jobId"]
+        logging.info("Started {} as {} (unique ID: {})".format(
+            response["jobName"],
+            response["jobId"],
+            workflow_uuid
         ))
