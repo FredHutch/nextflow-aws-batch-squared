@@ -94,7 +94,7 @@ if __name__ == "__main__":
         '--arguments',
         type=str,
         default=None,
-        help='Comma-separated list of arguments in KEY=VALUE format (e.g. foo=bar,next=flow)'
+        help='Semi-colon-separated list of arguments in KEY=VALUE format (e.g. "foo=bar;next=flow")'
     )
 
     parser.add_argument(

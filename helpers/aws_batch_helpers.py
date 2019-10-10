@@ -151,14 +151,15 @@ class Batch:
         ]
 
         if arguments is not None:
-            for field in arguments.split(","):
+            for field in arguments.split(";"):
                 if "=" in field:
-                    assert len(field.split(
-                        "=")) == 1, "Field must only have a single '=' ({})".format(field)
-                    arguments.append("--" + field.split("=")[0])
-                    arguments.append(field.split("=")[1])
+                    assert len(
+                        field.split("=")
+                    ) == 2, "Field must only have a single '=' ({})".format(field)
+                    command.append("--" + field.split("=")[0])
+                    command.append(field.split("=")[1])
                 else:
-                    arguments.append("--" + field)
+                    command.append("--" + field)
 
         # Set up the environment variables
         environment = [
