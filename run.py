@@ -111,6 +111,12 @@ if __name__ == "__main__":
         help='If specified, use Tower (tower.nf) to monitor the workflow'
     )
 
+    parser.add_argument(
+        '--watch',
+        action="store_true",
+        help='With this flag, monitor the status of the workflow until completion'
+    )
+
     args = parser.parse_args()
 
     # Set up the connection to AWS Batch
@@ -126,7 +132,7 @@ if __name__ == "__main__":
     logging.info("Using job definition: {}".format(job_definition_name))
 
     # Start the job which will run the Nextflow head node
-    batch.start_job(
+    job_id = batch.start_job(
         restart_uuid=args.restart_uuid,
         working_directory=args.working_directory,
         job_definition=job_definition_name,
@@ -140,3 +146,6 @@ if __name__ == "__main__":
         aws_region=args.region_name,
         tower_token=args.tower_token,
     )
+
+    if args.watch:
+        batch.watch(job_id)

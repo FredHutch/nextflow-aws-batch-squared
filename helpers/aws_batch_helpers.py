@@ -2,6 +2,7 @@ import boto3
 import json
 import logging
 import uuid
+import time
 
 
 class Batch:
@@ -9,7 +10,8 @@ class Batch:
     def __init__(self, profile_name, region_name):
         """Set up the connection to AWS Batch."""
         self.session = boto3.Session(profile_name=profile_name)
-        self.client = self.session.client("batch", region_name=region_name)
+        self.batch_client = self.session.client("batch", region_name=region_name)
+        self.logs_client = self.session.client('logs', region_name=region_name)
 
     def get_job_definitions(self):
         """Return a list of job definitions."""
@@ -18,7 +20,7 @@ class Batch:
         job_definition_list = []
 
         # Get the job definitions
-        response = self.client.describe_job_definitions()
+        response = self.batch_client.describe_job_definitions()
 
         # Add the job definitions to the list
         job_definition_list = job_definition_list + response["jobDefinitions"]
@@ -26,7 +28,7 @@ class Batch:
         # If there is pagination, get the next page
         while response.get("nextToken") is not None:
             # Get the next page
-            response = self.client.describe_job_definitions(
+            response = self.batch_client.describe_job_definitions(
                 nextToken=response["nextToken"]
             )
 
@@ -79,7 +81,7 @@ class Batch:
                 )
         # Otherwise, make a new job definition
         logging.info("Making new job definition")
-        response = self.client.register_job_definition(
+        response = self.batch_client.register_job_definition(
             jobDefinitionName="nextflow_head_node",
             type="container",
             containerProperties={
@@ -195,7 +197,7 @@ class Batch:
                 "value": tower_token
             })
 
-        response = self.client.submit_job(
+        response = self.batch_client.submit_job(
             jobName=name,
             jobQueue=queue,
             jobDefinition=job_definition,
@@ -207,8 +209,124 @@ class Batch:
             }
         )
 
-        logging.info("Started {} as {} (unique ID: {})".format(
+        logging.info("Started {} as AWS Batch ID {} (unique Nextflow ID: {})".format(
             response["jobName"],
             response["jobId"],
             workflow_uuid
         ))
+
+        return response["jobId"]
+
+    def watch(self, job_id, polling_frequency=1, printing_frequency=60):
+        """Monitor the status and logs of a job on AWS Batch."""
+
+        # Get the job name and job status
+        job_name = self.job_name(job_id)
+        job_status = self.job_status(job_id)
+
+        # Keep track of the job status from the previous iteration (makes sense below)
+        last_job_status = None
+
+        # Keep track of the last time we printed to the screen
+        last_print = time.time()
+
+        # Issue periodic updates to the job status
+        while job_status not in ["RUNNING", "FAILED", "SUCCEEDED"]:
+            if (time.time() - last_print) > printing_frequency or job_status != last_job_status:
+                logging.info("Job {} ({}) is {}".format(
+                    job_name,
+                    job_id,
+                    job_status
+                ))
+                last_print = time.time()
+            time.sleep(polling_frequency)
+            last_job_status = job_status
+            job_status = self.job_status(job_id)
+
+        # Now just print out the logs until the job is done
+
+        # Keep track of how many lines have been printed
+        n_log_lines_printed = 0
+
+        # Get the complete set of logs
+        logs = self.get_logs(job_id)
+
+        # Keep printing the logs to the screen
+        while len(logs) > n_log_lines_printed or job_status == "RUNNING":
+            while len(logs) > n_log_lines_printed:
+                logging.info(logs[n_log_lines_printed])
+                n_log_lines_printed += 1
+            # Wait before checking for more logs
+            time.sleep(polling_frequency)
+
+            # Refresh the logs
+            logs = self.get_logs(job_id)
+
+            # Get the new job status
+            job_status = self.job_status(job_id)
+
+        # The job is now over
+        logging.info("The final status of {} ({}) is {}".format(
+            job_name,
+            job_id,
+            job_status
+        ))
+
+    def job_status(self, job_id):
+        """Get the status of a job on AWS Batch."""
+
+        response = self.batch_client.describe_jobs(jobs=[job_id])
+        return response["jobs"][0]["status"]
+
+    def job_name(self, job_id):
+        """Get the name of a job on AWS Batch."""
+
+        response = self.batch_client.describe_jobs(jobs=[job_id])
+        return response["jobs"][0]["jobName"]
+    
+    def get_logs(self, job_id):
+        """Get the logs of a job on AWS Batch."""
+
+        # Get the logstream name
+        response = self.batch_client.describe_jobs(jobs=[job_id])
+        logstream = response["jobs"][0]["container"]["logStreamName"]
+
+        # Keep a list with the log messages
+        logs = []
+
+        # Get the logs
+        response = self.logs_client.get_log_events(
+            logGroupName="/aws/batch/job",
+            logStreamName=logstream
+        )
+
+        # Add to the list
+        logs.extend([
+            l["message"]
+            for l in response["events"]
+        ])
+
+        # Keep getting more pages
+        while response["nextForwardToken"] is not None:
+
+            # Keep track of the last token used
+            last_token = response["nextForwardToken"]
+
+            # Get the next page
+            response = self.logs_client.get_log_events(
+                logGroupName="/aws/batch/job",
+                logStreamName=logstream,
+                nextToken=last_token
+            )
+
+            # If the token is the same, we're done
+            if response["nextForwardToken"] == last_token:
+                response["nextForwardToken"] = None
+            else:
+                # Otherwise keep adding to the logs
+                logs.extend([
+                    l["message"]
+                    for l in response["events"]
+                ])
+
+        return logs
