@@ -19,8 +19,7 @@ space.
 ```
 usage: run.py [-h] [--workflow WORKFLOW]
               [--working-directory WORKING_DIRECTORY] [--name NAME]
-              [--config-file CONFIG_FILE] [--profile-name PROFILE_NAME]
-              [--region-name REGION_NAME] [--docker-image DOCKER_IMAGE]
+              [--config-file CONFIG_FILE] [--docker-image DOCKER_IMAGE]
               [--job-role-arn JOB_ROLE_ARN]
               [--temporary-volume TEMPORARY_VOLUME] [--job-queue JOB_QUEUE]
               [--arguments ARGUMENTS] [--restart-uuid RESTART_UUID]
@@ -37,10 +36,6 @@ optional arguments:
   --name NAME           Name used for this run
   --config-file CONFIG_FILE
                         Optional Nextflow config file
-  --profile-name PROFILE_NAME
-                        Profile used to specify AWS credentials
-  --region-name REGION_NAME
-                        AWS Region
   --docker-image DOCKER_IMAGE
                         Docker image used for the Nextflow head node
   --job-role-arn JOB_ROLE_ARN
@@ -89,17 +84,6 @@ The `--config-file` can be used to add more configuration options to the executi
 Don't use the config file for anything that you can specify with this workflow
 submission tool (e.g. `jobRoleARN`, `jobQueue`, `towerToken`). The additional config
 file must be located on S3.
-
-### Profile Name
-
-The `--profile-name` is the name used to specify your AWS credentials. People
-will usually just use the default value (`default`), but if you have multiple
-AWS accounts on your computer, then you can use this flag to specify which one
-should be used for execution.
-
-### Region Name
-
-The `--region-name` is the name of the AWS region used for execution.
 
 ### Docker Image
 

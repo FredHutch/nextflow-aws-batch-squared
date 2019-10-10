@@ -1,17 +1,20 @@
-import boto3
-import json
+"helper functions and classes"
+
 import logging
 import uuid
 import time
 
+import boto3
+
 
 class Batch:
+    "encapsulates a Batch job"
 
-    def __init__(self, profile_name, region_name):
+    def __init__(self):
         """Set up the connection to AWS Batch."""
-        self.session = boto3.Session(profile_name=profile_name)
-        self.batch_client = self.session.client("batch", region_name=region_name)
-        self.logs_client = self.session.client('logs', region_name=region_name)
+        self.session = boto3.Session()
+        self.batch_client = self.session.client("batch")
+        self.logs_client = self.session.client("logs")
 
     def get_job_definitions(self):
         """Return a list of job definitions."""
@@ -33,22 +36,18 @@ class Batch:
             )
 
             # Add the next page to the list
-            job_definition_list = job_definition_list + \
-                response["jobDefinitions"]
+            job_definition_list = job_definition_list + response["jobDefinitions"]
 
         # Return the entire list of job definitions
         return job_definition_list
 
-    def set_up_job_definition(
-        self,
-        profile_name="default",
-        docker_image=None,
-        job_role_arn=None
-    ):
+    def set_up_job_definition(self, docker_image=None, job_role_arn=None):
         """Set up the job definition used for the Nextflow head node."""
 
-        assert docker_image is not None, "Please specify Docker image for Nextflow head node"
-        assert job_role_arn is not None, "Please specify job role ARN"
+        assert (
+            docker_image is not None
+        ), "Please specify Docker image for Nextflow head node"
+        assert job_role_arn is not None, "Please specify --job-role-arn"
 
         # Get the list of existing job definitions
         logging.info("Checking for a suitable existing job definition")
@@ -61,24 +60,22 @@ class Batch:
             keep_this_job_definition = True
 
             # Iterate over each fixed element
-            for k, v in [
+            for k, value in [
                 ("type", "container"),
                 ("status", "ACTIVE"),
                 ("jobRoleArn", job_role_arn),
-                ("image", docker_image)
+                ("image", docker_image),
             ]:
                 # Check the base namespace, as well as the 'containerProperties'
                 # Both 'jobRoleArn' and 'image' are under 'containerProperties'
-                if j.get(k, j["containerProperties"].get(k)) != v:
+                if j.get(k, j["containerProperties"].get(k)) != value:
                     # If it doesn't match, set the marker to False
                     keep_this_job_definition = False
 
             # If everything matches, use this one
             if keep_this_job_definition:
                 logging.info("Using existing job definition")
-                return "{}:{}".format(
-                    j["jobDefinitionName"], j["revision"]
-                )
+                return "{}:{}".format(j["jobDefinitionName"], j["revision"])
         # Otherwise, make a new job definition
         logging.info("Making new job definition")
         response = self.batch_client.register_job_definition(
@@ -89,14 +86,12 @@ class Batch:
                 "jobRoleArn": job_role_arn,
                 "vcpus": 1,
                 "memory": 4000,
-            }
+            },
         )
 
-        return "{}:{}".format(
-            response["jobDefinitionName"], response["revision"]
-        )
+        return "{}:{}".format(response["jobDefinitionName"], response["revision"])
 
-    def start_job(
+    def start_job(  # pylint: disable=too-many-arguments, too-many-locals
         self,
         restart_uuid=None,
         working_directory=None,
@@ -110,23 +105,23 @@ class Batch:
         head_node_mem_mbs=4000,
         job_role_arn=None,
         temporary_volume=None,
-        aws_region=None,
         tower_token=None,
         nextflow_version="19.09.0-edge",
     ):
         """Start the job for the Nextflow head node."""
 
-        assert working_directory is not None, "Please specify the working directory"
+        assert working_directory is not None, "Please specify --working-directory"
         assert job_definition is not None, "Please specify the job definition"
-        assert workflow is not None, "Please specify the workflow"
-        assert config_file is not None, "Please specify the config_file"
-        assert name is not None, "Please specify the name"
-        assert queue is not None, "Please specify the queue"
-        assert job_role_arn is not None, "Please specify the job_role_arn"
-        assert aws_region is not None, "Please specify the aws_region"
+        # this should never happen as there is a default workflow:
+        assert workflow is not None, "Please specify --workflow"
+        assert config_file is not None, "Please specify --config-file"
+        assert name is not None, "Please specify --name"
+        assert queue is not None, "Please specify --job-queue"
+        assert job_role_arn is not None, "Please specify --job-rile-arn"
 
         assert working_directory.startswith(
-            "s3://"), "Working directory must be an S3 path"
+            "s3://"
+        ), "Working directory must be an S3 path"
         if working_directory.endswith("/") is False:
             working_directory += "/"
 
@@ -137,18 +132,10 @@ class Batch:
         else:
             workflow_uuid = restart_uuid
 
-        logs_directory = "{}{}".format(
-            working_directory,
-            workflow_uuid
-        )
+        logs_directory = "{}{}".format(working_directory, workflow_uuid)
 
         # Format the command
-        command = [
-            workflow,
-            "-work-dir",
-            working_directory,
-            "-resume"
-        ]
+        command = [workflow, "-work-dir", working_directory, "-resume"]
 
         if arguments is not None:
             for field in arguments.split(";"):
@@ -163,45 +150,20 @@ class Batch:
 
         # Set up the environment variables
         environment = [
-            {
-                "name": "NF_JOB_QUEUE",
-                "value": queue
-            },
-            {
-                "name": "NF_LOGSDIR",
-                "value": logs_directory
-            },
-            {
-                "name": "JOB_ROLE_ARN",
-                "value": job_role_arn
-            },
-            {
-                "name": "AWS_REGION",
-                "value": aws_region
-            },
-            {
-                "name": "NXF_VER",
-                "value": nextflow_version
-            }
+            {"name": "NF_JOB_QUEUE", "value": queue},
+            {"name": "NF_LOGSDIR", "value": logs_directory},
+            {"name": "JOB_ROLE_ARN", "value": job_role_arn},
+            {"name": "NXF_VER", "value": nextflow_version},
         ]
 
         if config_file is not None:
-            environment.append({
-                "name": "NF_CONFIG",
-                "value": config_file
-            })
+            environment.append({"name": "NF_CONFIG", "value": config_file})
 
         if temporary_volume is not None:
-            environment.append({
-                "name": "TEMP_VOL",
-                "value": temporary_volume
-            })
+            environment.append({"name": "TEMP_VOL", "value": temporary_volume})
 
         if tower_token is not None:
-            environment.append({
-                "name": "TOWER_TOKEN",
-                "value": tower_token
-            })
+            environment.append({"name": "TOWER_TOKEN", "value": tower_token})
             command.append("-with-tower")
 
         response = self.batch_client.submit_job(
@@ -212,15 +174,16 @@ class Batch:
                 "vcpus": head_node_cpus,
                 "memory": head_node_mem_mbs,
                 "command": command,
-                "environment": environment
-            }
+                "environment": environment,
+            },
         )
 
-        logging.info("Started {} as AWS Batch ID {} (unique Nextflow ID: {})".format(
+        logging.info(
+            "Started %s as AWS Batch ID %s (unique Nextflow ID: %s)",
             response["jobName"],
             response["jobId"],
-            workflow_uuid
-        ))
+            workflow_uuid,
+        )
 
         return response["jobId"], workflow_uuid
 
@@ -239,12 +202,10 @@ class Batch:
 
         # Issue periodic updates to the job status
         while job_status not in ["RUNNING", "FAILED", "SUCCEEDED"]:
-            if (time.time() - last_print) > printing_frequency or job_status != last_job_status:
-                logging.info("Job {} ({}) is {}".format(
-                    job_name,
-                    job_id,
-                    job_status
-                ))
+            if (
+                time.time() - last_print
+            ) > printing_frequency or job_status != last_job_status:
+                logging.info("Job %s (%s) is %s", job_name, job_id, job_status)
                 last_print = time.time()
             time.sleep(polling_frequency)
             last_job_status = job_status
@@ -273,11 +234,7 @@ class Batch:
             job_status = self.job_status(job_id)
 
         # The job is now over
-        logging.info("The final status of {} ({}) is {}".format(
-            job_name,
-            job_id,
-            job_status
-        ))
+        logging.info("The final status of %s (%s) is %s", job_name, job_id, job_status)
 
     def job_status(self, job_id):
         """Get the status of a job on AWS Batch."""
@@ -290,7 +247,7 @@ class Batch:
 
         response = self.batch_client.describe_jobs(jobs=[job_id])
         return response["jobs"][0]["jobName"]
-    
+
     def get_logs(self, job_id):
         """Get the logs of a job on AWS Batch."""
 
@@ -303,15 +260,11 @@ class Batch:
 
         # Get the logs
         response = self.logs_client.get_log_events(
-            logGroupName="/aws/batch/job",
-            logStreamName=logstream
+            logGroupName="/aws/batch/job", logStreamName=logstream
         )
 
         # Add to the list
-        logs.extend([
-            l["message"]
-            for l in response["events"]
-        ])
+        logs.extend([l["message"] for l in response["events"]])
 
         # Keep getting more pages
         while response["nextForwardToken"] is not None:
@@ -323,7 +276,7 @@ class Batch:
             response = self.logs_client.get_log_events(
                 logGroupName="/aws/batch/job",
                 logStreamName=logstream,
-                nextToken=last_token
+                nextToken=last_token,
             )
 
             # If the token is the same, we're done
@@ -331,9 +284,6 @@ class Batch:
                 response["nextForwardToken"] = None
             else:
                 # Otherwise keep adding to the logs
-                logs.extend([
-                    l["message"]
-                    for l in response["events"]
-                ])
+                logs.extend([l["message"] for l in response["events"]])
 
         return logs
