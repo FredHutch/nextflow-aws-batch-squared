@@ -138,15 +138,15 @@ class Batch:
         command = [workflow, "-work-dir", working_directory, "-resume"]
 
         if arguments is not None:
-            for field in arguments.split(","):
+            for field in arguments.split(";"):
                 if "=" in field:
-                    assert (
-                        len(field.split("=")) == 1
-                    ), "Field must only have a single '=' ({})".format(field)
-                    arguments.append("--" + field.split("=")[0])
-                    arguments.append(field.split("=")[1])
+                    assert len(
+                        field.split("=")
+                    ) == 2, "Field must only have a single '=' ({})".format(field)
+                    command.append("--" + field.split("=")[0])
+                    command.append(field.split("=")[1])
                 else:
-                    arguments.append("--" + field)
+                    command.append("--" + field)
 
         # Set up the environment variables
         environment = [
@@ -185,7 +185,7 @@ class Batch:
             workflow_uuid,
         )
 
-        return response["jobId"]
+        return response["jobId"], workflow_uuid
 
     def watch(self, job_id, polling_frequency=1, printing_frequency=60):
         """Monitor the status and logs of a job on AWS Batch."""

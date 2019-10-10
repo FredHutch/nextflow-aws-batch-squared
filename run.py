@@ -71,7 +71,7 @@ def main():
         "--arguments",
         type=str,
         default=None,
-        help="Comma-separated list of arguments in KEY=VALUE format (e.g. foo=bar,next=flow)",
+        help='Semi-colon-separated list of arguments in KEY=VALUE format (e.g. "foo=bar;next=flow")'
     )
 
     parser.add_argument(
@@ -114,7 +114,7 @@ def main():
     logging.info("Using job definition: %s", job_definition_name)
 
     # Start the job which will run the Nextflow head node
-    job_id = batch.start_job(
+    job_id, workflow_uuid = batch.start_job(
         restart_uuid=args.restart_uuid,
         working_directory=args.working_directory,
         job_definition=job_definition_name,
@@ -132,6 +132,8 @@ def main():
     if args.watch:
         batch.watch(job_id)
 
+    logging.info(
+        "The workflow is no longer running. To restart, use --restart-uuid {}".format(workflow_uuid))
 
 if __name__ == "__main__":
     main()
