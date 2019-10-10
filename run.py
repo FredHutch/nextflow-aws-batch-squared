@@ -117,6 +117,13 @@ if __name__ == "__main__":
         help='With this flag, monitor the status of the workflow until completion'
     )
 
+    parser.add_argument(
+        '--nextflow-version',
+        type=str,
+        default="19.09.0-edge",
+        help='Version of Nextflow to use'
+    )
+
     args = parser.parse_args()
 
     # Set up the connection to AWS Batch
@@ -145,6 +152,7 @@ if __name__ == "__main__":
         temporary_volume=args.temporary_volume,
         aws_region=args.region_name,
         tower_token=args.tower_token,
+        nextflow_version=args.nextflow_version,
     )
 
     if args.watch:

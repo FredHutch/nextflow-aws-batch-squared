@@ -111,7 +111,8 @@ class Batch:
         job_role_arn=None,
         temporary_volume=None,
         aws_region=None,
-        tower_token=None
+        tower_token=None,
+        nextflow_version="19.09.0-edge",
     ):
         """Start the job for the Nextflow head node."""
 
@@ -176,6 +177,10 @@ class Batch:
             {
                 "name": "AWS_REGION",
                 "value": aws_region
+            },
+            {
+                "name": "NXF_VER",
+                "value": nextflow_version
             }
         ]
 
@@ -196,6 +201,7 @@ class Batch:
                 "name": "TOWER_TOKEN",
                 "value": tower_token
             })
+            command.append("-with-tower")
 
         response = self.batch_client.submit_job(
             jobName=name,
