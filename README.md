@@ -106,7 +106,7 @@ configuration. Not all configurations use the jobRoleARN, and so this is optiona
 
 The `--temporary-volume` is used to specify the partition on the host machines
 which can be used for temporary scratch space. This is usually a folder set up
-in the AMI which has enough space for large-scale file manipulation and emphemeral
+in the AMI which has enough space for large-scale file manipulation and ephemeral
 storage.
 
 ### Job Queue
