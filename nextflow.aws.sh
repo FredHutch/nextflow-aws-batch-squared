@@ -26,6 +26,7 @@ NF_CONFIG=~/.nextflow/config
 if [ ! -z "$NF_PARAMS" ]; then
     echo Downloading params file from $NF_PARAMS to params.json
     aws s3 cp $NF_PARAMS ./params.json
+fi
 
 # Add in config parameters specified from environment variables
 # Make sure to overwite any existing values
