@@ -117,8 +117,11 @@ if [[ "$NEXTFLOW_PROJECT" =~ ^s3://.* ]]; then
     NEXTFLOW_PROJECT=./project
 fi
 
-echo "== Cloning Workflow: $WORKFLOW =="
-echo "nextflow clone $WORKFLOW LOCAL_REPO"
+# stage workflow repository
+if [ ! -z "$NEXTFLOW_PROJECT" ]; then
+    echo "== Cloning Workflow: $WORKFLOW =="
+    echo "nextflow clone $WORKFLOW LOCAL_REPO"
+fi
 
 echo "== Running Workflow =="
 echo "nextflow run -c $NF_CONFIG $NEXTFLOW_PROJECT $NEXTFLOW_PARAMS"
