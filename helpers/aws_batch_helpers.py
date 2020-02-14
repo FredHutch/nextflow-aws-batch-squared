@@ -23,7 +23,9 @@ class Batch:
         job_definition_list = []
 
         # Get the job definitions
-        response = self.batch_client.describe_job_definitions()
+        response = self.batch_client.describe_job_definitions(
+            jobDefinitions=["nextflow_head_node"]
+        )
 
         # Add the job definitions to the list
         job_definition_list = job_definition_list + response["jobDefinitions"]
@@ -32,6 +34,7 @@ class Batch:
         while response.get("nextToken") is not None:
             # Get the next page
             response = self.batch_client.describe_job_definitions(
+                jobDefinitions=["nextflow_head_node"],
                 nextToken=response["nextToken"]
             )
 
