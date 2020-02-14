@@ -169,6 +169,7 @@ class Batch:
             {"name": "NF_LOGSDIR", "value": logs_directory},
             {"name": "JOB_ROLE_ARN", "value": job_role_arn},
             {"name": "NXF_VER", "value": nextflow_version},
+            {"name": "WORKFLOW", "value": workflow},
         ]
 
         if config_file is not None:
@@ -183,10 +184,6 @@ class Batch:
         if tower_token is not None:
             environment.append({"name": "TOWER_TOKEN", "value": tower_token})
             command.append("-with-tower")
-
-        if main_script is not None:
-            environment.append({"name": "WORKFLOW", "value": workflow})
-
 
         response = self.batch_client.submit_job(
             jobName=name,
