@@ -140,7 +140,7 @@ class Batch:
 
         # Format the command
         command = [
-            workflow if main_script is None else main_script,
+            workflow if main_script is None else "/root/.nextflow/assets/{}".format(main_script),
             "-work-dir", 
             working_directory, 
             "-resume"
