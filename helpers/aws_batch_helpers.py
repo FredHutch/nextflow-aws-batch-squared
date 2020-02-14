@@ -169,7 +169,7 @@ class Batch:
             environment.append({"name": "NF_CONFIG", "value": config_file})
 
         if params_file is not None:
-            environment.append({"name": "NF_PARAMS", "value": "params.json"})
+            environment.append({"name": "NF_PARAMS", "value": params_file})
 
         if temporary_volume is not None:
             environment.append({"name": "TEMP_VOL", "value": temporary_volume})
