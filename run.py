@@ -50,6 +50,10 @@ def main():
     )
 
     parser.add_argument(
+        "--params-file", type=str, default=None, help="Optional Nextflow params file (-params-file)"
+    )
+
+    parser.add_argument(
         "--docker-image",
         type=str,
         default="quay.io/fhcrc-microbiome/nextflow:v0.0.4",
@@ -128,6 +132,7 @@ def main():
         arguments=args.arguments,
         queue=args.job_queue,
         config_file=args.config_file,
+        params_file=args.params_file,
         job_role_arn=args.job_role_arn,
         temporary_volume=args.temporary_volume,
         tower_token=args.tower_token,

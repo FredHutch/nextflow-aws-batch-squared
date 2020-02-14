@@ -100,6 +100,7 @@ class Batch:
         workflow=None,
         revision=None,
         config_file=None,
+        params_file=None,
         name=None,
         arguments=None,
         queue=None,
@@ -142,6 +143,9 @@ class Batch:
         if revision is not None:
             command.extend(['-r', revision])
 
+        if params_file is not None:
+            command.extend(['-params-file', 'params.json'])
+
         if arguments is not None:
             for field in arguments.split(";"):
                 if "=" in field:
@@ -163,6 +167,9 @@ class Batch:
 
         if config_file is not None:
             environment.append({"name": "NF_CONFIG", "value": config_file})
+
+        if params_file is not None:
+            environment.append({"name": "NF_PARAMS", "value": "params.json"})
 
         if temporary_volume is not None:
             environment.append({"name": "TEMP_VOL", "value": temporary_volume})
