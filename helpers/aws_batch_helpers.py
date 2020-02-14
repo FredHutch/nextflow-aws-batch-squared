@@ -98,7 +98,6 @@ class Batch:
         working_directory=None,
         job_definition=None,
         workflow=None,
-        main_script=None,
         revision=None,
         config_file=None,
         params_file=None,
@@ -139,12 +138,7 @@ class Batch:
         logs_directory = "{}{}".format(working_directory, workflow_uuid)
 
         # Format the command
-        command = [
-            workflow if main_script is None else main_script,
-            "-work-dir", 
-            working_directory, 
-            "-resume"
-        ]
+        command = [workflow, "-work-dir", working_directory, "-resume"]
 
         if revision is not None:
             command.extend(['-r', revision])
@@ -169,7 +163,6 @@ class Batch:
             {"name": "NF_LOGSDIR", "value": logs_directory},
             {"name": "JOB_ROLE_ARN", "value": job_role_arn},
             {"name": "NXF_VER", "value": nextflow_version},
-            {"name": "WORKFLOW", "value": workflow},
         ]
 
         if config_file is not None:

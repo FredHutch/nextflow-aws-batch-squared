@@ -31,10 +31,6 @@ def main():
     )
 
     parser.add_argument(
-        "--main-script", type=str, default=None, help="Optional: Location of script in repository, if not the default main script"
-    )
-
-    parser.add_argument(
         "--revision", type=str, default=None, help="Revision of the workflow to run"
     )
 
@@ -60,7 +56,7 @@ def main():
     parser.add_argument(
         "--docker-image",
         type=str,
-        default="quay.io/fhcrc-microbiome/nextflow:v0.0.10",
+        default="quay.io/fhcrc-microbiome/nextflow:v0.0.9",
         help="Docker image used for the Nextflow head node",
     )
 
@@ -131,7 +127,6 @@ def main():
         working_directory=args.working_directory,
         job_definition=job_definition_name,
         workflow=args.workflow,
-        main_script=args.main_script,
         revision=args.revision,
         name=args.name,
         arguments=args.arguments,
