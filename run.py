@@ -56,7 +56,7 @@ def main():
     parser.add_argument(
         "--docker-image",
         type=str,
-        default="quay.io/fhcrc-microbiome/nextflow:v0.0.8",
+        default="quay.io/fhcrc-microbiome/nextflow:v0.0.9",
         help="Docker image used for the Nextflow head node",
     )
 

@@ -144,7 +144,7 @@ class Batch:
             command.extend(['-r', revision])
 
         if params_file is not None:
-            command.extend(['-params-file', '~/.nextflow/params.json'])
+            command.extend(['-params-file', '/root/.nextflow/params.json'])
 
         if arguments is not None:
             for field in arguments.split(";"):
@@ -169,7 +169,7 @@ class Batch:
             environment.append({"name": "NF_CONFIG", "value": config_file})
 
         if params_file is not None:
-            environment.append({"name": "NF_PARAMS", "value": params_file})
+            environment.append({"name": "NF_PARAMS_REMOTE", "value": params_file})
 
         if temporary_volume is not None:
             environment.append({"name": "TEMP_VOL", "value": temporary_volume})
