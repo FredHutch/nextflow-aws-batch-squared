@@ -144,7 +144,7 @@ class Batch:
             command.extend(['-r', revision])
 
         if params_file is not None:
-            command.extend(['-params-file', 'params.json'])
+            command.extend(['-params-file', '~/.nextflow/params.json'])
 
         if arguments is not None:
             for field in arguments.split(";"):
