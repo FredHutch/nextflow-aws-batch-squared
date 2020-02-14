@@ -97,6 +97,7 @@ class Batch:
         working_directory=None,
         job_definition=None,
         workflow=None,
+        revision=None,
         config_file=None,
         name=None,
         arguments=None,
@@ -136,6 +137,9 @@ class Batch:
 
         # Format the command
         command = [workflow, "-work-dir", working_directory, "-resume"]
+
+        if revision is not None:
+            command.extend(['-r', revision])
 
         if arguments is not None:
             for field in arguments.split(";"):

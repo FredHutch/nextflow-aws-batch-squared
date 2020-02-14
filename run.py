@@ -31,6 +31,10 @@ def main():
     )
 
     parser.add_argument(
+        "--revision", type=str, default=None, help="Revision of the workflow to run"
+    )
+
+    parser.add_argument(
         "--working-directory",
         type=str,
         default=None,
@@ -119,6 +123,7 @@ def main():
         working_directory=args.working_directory,
         job_definition=job_definition_name,
         workflow=args.workflow,
+        revision=args.revision,
         name=args.name,
         arguments=args.arguments,
         queue=args.job_queue,
