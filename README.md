@@ -41,6 +41,8 @@ optional arguments:
   --name NAME           Name used for this run
   --config-file CONFIG_FILE
                         Optional Nextflow config file
+  --params-file PARAMS_FILE
+                        Optional Nextflow params file (JSON format)
   --docker-image DOCKER_IMAGE
                         Docker image used for the Nextflow head node
   --job-role-arn JOB_ROLE_ARN
@@ -89,6 +91,14 @@ The `--config-file` can be used to add more configuration options to the executi
 Don't use the config file for anything that you can specify with this workflow
 submission tool (e.g. `jobRoleARN`, `jobQueue`, `towerToken`). The additional config
 file must be located on S3.
+
+### Params File
+
+If you prefer to specify parameters for a workflow using a params JSON file,
+instead of using the `--parameter_1`, etc. flags at execution time, then you
+can use the `--params-file` flag in with this run script. At the moment this
+file must be located in S3, but in the future this could potentially be staged
+from some local or relative location.
 
 ### Docker Image
 
