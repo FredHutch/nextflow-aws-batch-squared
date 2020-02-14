@@ -16,30 +16,28 @@ class Batch:
         self.batch_client = self.session.client("batch")
         self.logs_client = self.session.client("logs")
 
-    def get_job_definitions(self):
+    def get_job_definitions(self, job_definition_name="nextflow_head_node"):
         """Return a list of job definitions."""
 
         # Make a list with all of the job definitions
         job_definition_list = []
 
-        # Get the job definitions
+        # Get the job definitions, starting with {job_definition_name}:1
+        ix = 1
         response = self.batch_client.describe_job_definitions(
-            jobDefinitions=["nextflow_head_node"]
+            jobDefinitions=["{}:{}".format(job_definition_name, ix)]
         )
+        while len(response["jobDefinitions"]) > 0:
 
-        # Add the job definitions to the list
-        job_definition_list = job_definition_list + response["jobDefinitions"]
-
-        # If there is pagination, get the next page
-        while response.get("nextToken") is not None:
-            # Get the next page
-            response = self.batch_client.describe_job_definitions(
-                jobDefinitions=["nextflow_head_node"],
-                nextToken=response["nextToken"]
-            )
-
-            # Add the next page to the list
+            # Add the job definitions to the list
             job_definition_list = job_definition_list + response["jobDefinitions"]
+
+            # Increment the counter
+            ix += 1
+
+            response = self.batch_client.describe_job_definitions(
+                jobDefinitions=["{}:{}".format(job_definition_name, ix)]
+            )
 
         # Return the entire list of job definitions
         return job_definition_list
