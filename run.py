@@ -105,7 +105,7 @@ def main():
     parser.add_argument(
         "--nextflow-version",
         type=str,
-        default="19.09.0-edge",
+        default="20.01.0",
         help="Version of Nextflow to use",
     )
 

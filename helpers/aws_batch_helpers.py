@@ -109,7 +109,7 @@ class Batch:
         job_role_arn=None,
         temporary_volume=None,
         tower_token=None,
-        nextflow_version="19.09.0-edge",
+        nextflow_version="20.01.0",
         with_report=None,
         with_trace=None,
     ):
