@@ -110,6 +110,8 @@ class Batch:
         temporary_volume=None,
         tower_token=None,
         nextflow_version="19.09.0-edge",
+        with_report=None,
+        with_trace=None,
     ):
         """Start the job for the Nextflow head node."""
 
@@ -138,7 +140,14 @@ class Batch:
         logs_directory = "{}{}".format(working_directory, workflow_uuid)
 
         # Format the command
-        command = [workflow, "-work-dir", working_directory, "-resume"]
+        command = [
+            workflow, 
+            "-work-dir", 
+            working_directory, 
+            "-resume", 
+            "-with-report", 
+            "-with-trace"
+        ]
 
         if revision is not None:
             command.extend(['-r', revision])
@@ -177,6 +186,14 @@ class Batch:
         if tower_token is not None:
             environment.append({"name": "TOWER_TOKEN", "value": tower_token})
             command.append("-with-tower")
+
+        if with_report is not None:
+            assert with_report.startswith("s3://"), "--with-report must start with s3://"
+            environment.append({"name": "REPORT_OUT", "value": with_report})
+
+        if with_trace is not None:
+            assert with_trace.startswith("s3://"), "--with-trace must start with s3://"
+            environment.append({"name": "TRACE_OUT", "value": with_trace})
 
         response = self.batch_client.submit_job(
             jobName=name,

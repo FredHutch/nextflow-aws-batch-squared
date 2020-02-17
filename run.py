@@ -56,7 +56,7 @@ def main():
     parser.add_argument(
         "--docker-image",
         type=str,
-        default="quay.io/fhcrc-microbiome/nextflow:v0.0.9",
+        default="quay.io/fhcrc-microbiome/nextflow:v0.0.14",
         help="Docker image used for the Nextflow head node",
     )
 
@@ -109,6 +109,18 @@ def main():
         help="Version of Nextflow to use",
     )
 
+    parser.add_argument(
+        "--with-report",
+        type=str,
+        help="If specified, write the report HTML to this path",
+    )
+
+    parser.add_argument(
+        "--with-trace",
+        type=str,
+        help="If specified, write the trace TXT to this path",
+    )
+
     args = parser.parse_args()
 
     # Set up the connection to AWS Batch
@@ -137,6 +149,8 @@ def main():
         temporary_volume=args.temporary_volume,
         tower_token=args.tower_token,
         nextflow_version=args.nextflow_version,
+        with_report=args.with_report,
+        with_trace=args.with_trace,
     )
 
     if args.watch:

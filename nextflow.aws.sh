@@ -120,3 +120,15 @@ fi
 echo "== Running Workflow =="
 echo "nextflow run -c $NF_CONFIG $NEXTFLOW_PROJECT $NEXTFLOW_PARAMS"
 nextflow run -c $NF_CONFIG $NEXTFLOW_PROJECT $NEXTFLOW_PARAMS
+
+# If $REPORT_OUT is set, copy the file out
+if [ ! -z "$REPORT_OUT" ]; then
+    echo "== Returning Workflow Report =="
+    aws s3 cp report.html $REPORT_OUT
+fi
+
+# If $TRACE_OUT is set, copy the file out
+if [ ! -z "$TRACE_OUT" ]; then
+    echo "== Returning Workflow Trace =="
+    aws s3 cp trace.txt $TRACE_OUT
+fi
