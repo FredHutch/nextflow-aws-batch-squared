@@ -172,6 +172,10 @@ class Batch:
             {"name": "NF_LOGSDIR", "value": logs_directory},
             {"name": "JOB_ROLE_ARN", "value": job_role_arn},
             {"name": "NXF_VER", "value": nextflow_version},
+            {"name": "NXF_ANSI_LOG", "value": 0},
+            {"name": "JAVA_OPTS", "value": "-Xms{}m -Xmx{}m".format(
+                head_node_mem_mbs, head_node_mem_mbs
+            )}
         ]
 
         if config_file is not None:
