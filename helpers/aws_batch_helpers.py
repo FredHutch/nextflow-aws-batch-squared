@@ -48,8 +48,7 @@ class Batch:
         assert (
             docker_image is not None
         ), "Please specify Docker image for Nextflow head node"
-        assert job_role_arn is not None, "Please specify --job-role-arn"
-
+        
         # Get the list of existing job definitions
         logging.info("Checking for a suitable existing job definition")
         job_definitions = self.get_job_definitions()
@@ -67,6 +66,8 @@ class Batch:
                 ("jobRoleArn", job_role_arn),
                 ("image", docker_image),
             ]:
+                if value is None:
+                    continue
                 # Check the base namespace, as well as the 'containerProperties'
                 # Both 'jobRoleArn' and 'image' are under 'containerProperties'
                 if j.get(k, j["containerProperties"].get(k)) != value:
@@ -79,15 +80,18 @@ class Batch:
                 return "{}:{}".format(j["jobDefinitionName"], j["revision"])
         # Otherwise, make a new job definition
         logging.info("Making new job definition")
+        
+        containerProperties={
+            "image": docker_image,
+            "vcpus": 1,
+            "memory": 4000,
+        }
+        if job_role_arn is not None:
+            containerProperties["jobRoleArn"] = job_role_arn
         response = self.batch_client.register_job_definition(
             jobDefinitionName="nextflow_head_node",
             type="container",
-            containerProperties={
-                "image": docker_image,
-                "jobRoleArn": job_role_arn,
-                "vcpus": 1,
-                "memory": 4000,
-            },
+            containerProperties=containerProperties,
         )
 
         return "{}:{}".format(response["jobDefinitionName"], response["revision"])
@@ -122,7 +126,6 @@ class Batch:
         assert config_file is not None, "Please specify --config-file"
         assert name is not None, "Please specify --name"
         assert queue is not None, "Please specify --job-queue"
-        assert job_role_arn is not None, "Please specify --job-rile-arn"
 
         assert working_directory.startswith(
             "s3://"
@@ -170,13 +173,15 @@ class Batch:
         environment = [
             {"name": "NF_JOB_QUEUE", "value": queue},
             {"name": "NF_LOGSDIR", "value": logs_directory},
-            {"name": "JOB_ROLE_ARN", "value": job_role_arn},
             {"name": "NXF_VER", "value": nextflow_version},
             {"name": "NXF_ANSI_LOG", "value": "0"},
             {"name": "JAVA_OPTS", "value": "-Xms{}m -Xmx{}m".format(
                 head_node_mem_mbs, head_node_mem_mbs
             )}
         ]
+
+        if job_role_arn is not None:
+            environment.append({"name": "JOB_ROLE_ARN", "value": job_role_arn})
 
         if config_file is not None:
             environment.append({"name": "NF_CONFIG", "value": config_file})
