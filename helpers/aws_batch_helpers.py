@@ -10,11 +10,12 @@ import boto3
 class Batch:
     "encapsulates a Batch job"
 
-    def __init__(self):
+    def __init__(self, memory=4000):
         """Set up the connection to AWS Batch."""
         self.session = boto3.Session()
         self.batch_client = self.session.client("batch")
         self.logs_client = self.session.client("logs")
+        self.memory = memory
 
     def get_job_definitions(self, job_definition_name="nextflow_head_node"):
         """Return a list of job definitions."""
@@ -48,7 +49,7 @@ class Batch:
         assert (
             docker_image is not None
         ), "Please specify Docker image for Nextflow head node"
-        
+
         # Get the list of existing job definitions
         logging.info("Checking for a suitable existing job definition")
         job_definitions = self.get_job_definitions()
@@ -83,8 +84,8 @@ class Batch:
         
         containerProperties={
             "image": docker_image,
-            "vcpus": 1,
-            "memory": 4000,
+            "vcpus": int(max(int(self.memory / 4000), 1)),
+            "memory": self.memory,
         }
         if job_role_arn is not None:
             containerProperties["jobRoleArn"] = job_role_arn
@@ -109,7 +110,6 @@ class Batch:
         arguments=None,
         queue=None,
         head_node_cpus=1,
-        head_node_mem_mbs=4000,
         job_role_arn=None,
         temporary_volume=None,
         tower_token=None,
@@ -176,7 +176,7 @@ class Batch:
             {"name": "NXF_VER", "value": nextflow_version},
             {"name": "NXF_ANSI_LOG", "value": "0"},
             {"name": "JAVA_OPTS", "value": "-Xms{}m -Xmx{}m".format(
-                head_node_mem_mbs, head_node_mem_mbs
+                self.memory, self.memory
             )}
         ]
 
@@ -210,7 +210,7 @@ class Batch:
             jobDefinition=job_definition,
             containerOverrides={
                 "vcpus": head_node_cpus,
-                "memory": head_node_mem_mbs,
+                "memory": self.memory,
                 "command": command,
                 "environment": environment,
             },

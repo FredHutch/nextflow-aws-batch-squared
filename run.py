@@ -110,6 +110,13 @@ def main():
     )
 
     parser.add_argument(
+        "--memory",
+        type=int,
+        default=4000,
+        help="Amount of memory (Mbs) for head node to use",
+    )
+
+    parser.add_argument(
         "--with-report",
         type=str,
         help="If specified, write the report HTML to this path",
@@ -124,7 +131,7 @@ def main():
     args = parser.parse_args()
 
     # Set up the connection to AWS Batch
-    batch = aws_batch_helpers.Batch()
+    batch = aws_batch_helpers.Batch(memory=args.memory)
 
     # Get the job definition to use for the Nextflow head node
     job_definition_name = batch.set_up_job_definition(
